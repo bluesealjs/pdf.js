@@ -1981,23 +1981,28 @@ class PartialEvaluator {
               self.ensureStateFont(stateManager.state);
               continue;
             }
+            const rawChars = args[0]; // ← raw bytes string
             args[0] = self.handleText(args[0], stateManager.state);
+            args[1] = rawChars;       // ← save raw alongside glyphs
             break;
           case OPS.showSpacedText:
             if (!stateManager.state.font) {
               self.ensureStateFont(stateManager.state);
               continue;
             }
-            const combinedGlyphs = [],
+            const combinedGlyphs = [], combinedRaw = [],
               state = stateManager.state;
             for (const arrItem of args[0]) {
               if (typeof arrItem === "string") {
                 combinedGlyphs.push(...self.handleText(arrItem, state));
+                combinedRaw.push(arrItem); // ← raw
               } else if (typeof arrItem === "number") {
                 combinedGlyphs.push(arrItem);
+                combinedRaw.push(arrItem);
               }
             }
             args[0] = combinedGlyphs;
+            args[1] = combinedRaw; // ← raw parts array
             fn = OPS.showText;
             break;
           case OPS.nextLineShowText:
