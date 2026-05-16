@@ -1226,15 +1226,20 @@ class Lexer {
       case 0x2e: // '.'
         return this.getNumber();
       case 0x28: // '('
-        return this.getString();
+        this._lastStringStart = this.stream.pos - 1; // ← position of '('
+        const s = this.getString();
+        this._lastStringEnd = this.stream.pos; // ← position after ')'
+        return s;
       case 0x2f: // '/'
         return this.getName();
       // array punctuation
       case 0x5b: // '['
+        this._lastArrayStart = this.stream.pos - 1; // ← position of '['
         this.nextChar();
         return Cmd.get("[");
       case 0x5d: // ']'
         this.nextChar();
+        this._lastArrayEnd = this.stream.pos; // ← position after ']'
         return Cmd.get("]");
       // hex string or dict punctuation
       case 0x3c: // '<'
@@ -1244,7 +1249,10 @@ class Lexer {
           this.nextChar();
           return Cmd.get("<<");
         }
-        return this.getHexString();
+        this._lastStringStart = this.stream.pos - 2; // ← position of '<'
+        const hs = this.getHexString();
+        this._lastStringEnd = this.stream.pos; // ← position after '>'
+        return hs;
       // dict punctuation
       case 0x3e: // '>'
         ch = this.nextChar();

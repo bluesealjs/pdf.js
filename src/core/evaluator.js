@@ -1976,35 +1976,50 @@ class PartialEvaluator {
               })
             );
             return;
-          case OPS.showText:
+          case OPS.showText: {
+            const lexer = self.parser?.lexer ?? preprocessor.parser.lexer;
+            args[1] =
+              String.fromCharCode(
+                ...lexer.stream.bytes.subarray(
+                  lexer._lastStringStart,
+                  lexer._lastStringEnd
+                )
+              ) + " Tj";
+
             if (!stateManager.state.font) {
               self.ensureStateFont(stateManager.state);
               continue;
             }
-            const rawChars = args[0]; // ← raw bytes string
             args[0] = self.handleText(args[0], stateManager.state);
-            args[1] = rawChars;       // ← save raw alongside glyphs
             break;
-          case OPS.showSpacedText:
+          }
+          case OPS.showSpacedText: {
+            const lexer = self.parser?.lexer ?? preprocessor.parser.lexer;
+            args[1] =
+              String.fromCharCode(
+                ...lexer.stream.bytes.subarray(
+                  lexer._lastArrayStart,
+                  lexer._lastArrayEnd
+                )
+              ) + " TJ";
+
             if (!stateManager.state.font) {
               self.ensureStateFont(stateManager.state);
               continue;
             }
-            const combinedGlyphs = [], combinedRaw = [],
+            const combinedGlyphs = [],
               state = stateManager.state;
             for (const arrItem of args[0]) {
               if (typeof arrItem === "string") {
                 combinedGlyphs.push(...self.handleText(arrItem, state));
-                combinedRaw.push(arrItem); // ← raw
               } else if (typeof arrItem === "number") {
                 combinedGlyphs.push(arrItem);
-                combinedRaw.push(arrItem);
               }
             }
             args[0] = combinedGlyphs;
-            args[1] = combinedRaw; // ← raw parts array
             fn = OPS.showText;
             break;
+          }
           case OPS.nextLineShowText:
             if (!stateManager.state.font) {
               self.ensureStateFont(stateManager.state);
