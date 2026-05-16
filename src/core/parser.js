@@ -1228,7 +1228,7 @@ class Lexer {
       case 0x28: // '('
         this._lastStringStart = this.stream.pos - 1; // ← position of '('
         const s = this.getString();
-        this._lastStringEnd = this.stream.pos; // ← position after ')'
+        this._lastStringEnd = this.stream.pos - 1; // ← position after ')'
         return s;
       case 0x2f: // '/'
         return this.getName();
@@ -1239,7 +1239,7 @@ class Lexer {
         return Cmd.get("[");
       case 0x5d: // ']'
         this.nextChar();
-        this._lastArrayEnd = this.stream.pos; // ← position after ']'
+        this._lastArrayEnd = this.stream.pos - 1; // ← position after ']'
         return Cmd.get("]");
       // hex string or dict punctuation
       case 0x3c: // '<'
