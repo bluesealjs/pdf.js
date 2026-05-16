@@ -2466,6 +2466,8 @@ class PartialEvaluator {
     prevRefs = null,
     intersector = null,
   }) {
+    const rawOpsBuffer = [];
+
     if (stream.isAsync) {
       const bytes = await stream.asyncGetBytes();
       if (bytes) {
@@ -3232,7 +3234,11 @@ class PartialEvaluator {
           textContentItem.height * textContentItem.textAdvanceScale;
       }
 
-      textContent.items.push(runBidiTransform(textContentItem));
+      const item = runBidiTransform(textContentItem);
+      item.rawOps = [...rawOpsBuffer]; // ← attach exact raw ops for this item
+      rawOpsBuffer.length = 0;
+
+      textContent.items.push(item);
       textContentItem.initialized = false;
       textContentItem.str.length = 0;
     }
@@ -3356,7 +3362,15 @@ class PartialEvaluator {
             textState.textMatrix = IDENTITY_MATRIX.slice();
             textState.textLineMatrix = IDENTITY_MATRIX.slice();
             break;
-          case OPS.showSpacedText:
+          case OPS.showSpacedText: {
+            const tjLexer = preprocessor.parser.lexer;
+            const rawOp =
+              String.fromCharCode(
+                ...tjLexer.stream.bytes.subarray(
+                  tjLexer._lastArrayStart,
+                  tjLexer._lastArrayEnd
+                )
+              ) + " TJ";
             if (!stateManager.state.font) {
               self.ensureStateFont(stateManager.state);
               continue;
@@ -3395,8 +3409,19 @@ class PartialEvaluator {
                 extraSpacing: 0,
               });
             }
+
+            rawOpsBuffer.push(rawOp);
             break;
-          case OPS.showText:
+          }
+          case OPS.showText: {
+            const tjLexer = preprocessor.parser.lexer;
+            const rawOp =
+              String.fromCharCode(
+                ...tjLexer.stream.bytes.subarray(
+                  tjLexer._lastStringStart,
+                  tjLexer._lastStringEnd
+                )
+              ) + " Tj";
             if (!stateManager.state.font) {
               self.ensureStateFont(stateManager.state);
               continue;
@@ -3405,7 +3430,9 @@ class PartialEvaluator {
               chars: args[0],
               extraSpacing: 0,
             });
+            rawOpsBuffer.push(rawOp);
             break;
+          }
           case OPS.nextLineShowText:
             if (!stateManager.state.font) {
               self.ensureStateFont(stateManager.state);
